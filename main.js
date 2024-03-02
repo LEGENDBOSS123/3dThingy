@@ -1,3 +1,87 @@
+function setBoxGeometry(planeSize, size, map1, map2) {
+    top.c = new THREE.PlaneGeometry(planeSize.width * size.x, planeSize.height * size.y, planeSize.width - 1, planeSize.height - 1);
+    var pos = c.attributes.position;
+    for (var i = 0; i < pos.count; i++) {
+        var z = i * 3 + 2;
+        var x = i%planeSize.width;
+        var y = planeSize.height - 1 - Math.floor(i/planeSize.width);
+        pos.array[z] = map1[y][x];
+    }
+    var c2 = new THREE.PlaneGeometry(planeSize.width * size.x, planeSize.height * size.y, planeSize.width - 1, planeSize.height - 1);
+    var pos2 = c2.attributes.position;
+    for (var i = 0; i < pos2.count; i++) {
+        var z = i * 3 + 2;
+        var x = i%planeSize.width;
+        var y = planeSize.height - 1 - Math.floor(i/planeSize.width);
+        pos2.array[z] = map2[y][x];
+    }
+    var c3 = new THREE.PlaneGeometry(planeSize.width * size.x, planeSize.height * size.y, planeSize.width-1, 1);
+    var pos3 = c3.attributes.position;
+    c3.translate(0,0,planeSize.height*size.y/2);
+    for (var i = 0; i < pos3.count/2; i++) {
+        var x = i * 3;
+        var y = i * 3 + 1;
+        var z = i * 3 + 2;
+        var x1 = i%planeSize.width;
+        var y1 = 0;
+        pos3.array[y] = map1[y1][x1];
+        pos3.array[y + pos3.count*3/2] = map2[y1][x1];
+    }
+    c3.rotateX(Math.PI/2);
+
+    var c4 = new THREE.PlaneGeometry(planeSize.width * size.x, planeSize.height * size.y, planeSize.width-1, 1);
+    var pos4 = c4.attributes.position;
+    c4.translate(0,0,-planeSize.height*size.y/2);
+    for (var i = 0; i < pos4.count/2; i++) {
+        var x = i * 3;
+        var y = i * 3 + 1;
+        var z = i * 3 + 2;
+        var x1 = i%planeSize.width;
+        var y1 = planeSize.height-1;
+        pos4.array[y] = map1[y1][x1];
+        pos4.array[y + pos4.count*3/2] = map2[y1][x1];
+    }
+    c4.rotateX(Math.PI/2);
+
+    var c5 = new THREE.PlaneGeometry(planeSize.width * size.x, planeSize.height * size.y, 1, planeSize.height-1);
+    var pos5 = c5.attributes.position;
+    c5.translate(0,0,planeSize.width*size.y/2);
+    for (var e = 0; e < pos5.count; e++) {
+        var i = e;
+        var x = i * 3;
+        
+        var x1 = 0;
+        var y1 = planeSize.height - 1 -Math.floor(i/2);
+        if(i % 2 == 0){
+            pos5.array[x] = map1[y1][x1];
+        }
+        else{
+            pos5.array[x] = map2[y1][x1];
+        }
+    }
+    c5.rotateY(-Math.PI/2);
+
+    var c6 = new THREE.PlaneGeometry(planeSize.width * size.x, planeSize.height * size.y, 1, planeSize.height-1);
+    var pos6 = c6.attributes.position;
+    c6.translate(0,0,planeSize.width*size.y/2);
+    for (var e = 0; e < pos6.count; e++) {
+        var i = e;
+        var x = i * 3;
+        
+        var x1 = planeSize.width - 1;
+        var y1 = planeSize.height - 1 -Math.floor(i/2);
+        if(i % 2 == 0){
+            pos6.array[x] = -map1[y1][x1];
+        }
+        else{
+            pos6.array[x] = -map2[y1][x1];
+        }
+    }
+    c6.rotateY(Math.PI/2);FrontSide
+    return [[c,THREE.FrontSide],[c2, THREE.BackSide],[c3,THREE.FrontSide],[c4,THREE.BackSide],[c5,THREE.BackSide],[c6,THREE.FrontSide]];
+}
+
+
 var lerp = function (a, b, c) {
     return a + c * (b - a);
 }
@@ -32,7 +116,7 @@ window.addEventListener('wheel', function (e) {
 
 
 
-var renderer = new THREE.WebGLRenderer({ c });
+var renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
@@ -42,20 +126,35 @@ var angleX = 0;
 var angleY = 0;
 
 var heightmap = [];
+var heightmap2 = [];
 
 for (var y = 0; y < 100; y++) {
     var arr = [];
-    for (var x = 0; x < 100; x++) {
+    for (var x = 0; x < 120; x++) {
         if (Math.abs(x - 50) + Math.abs(y - 50) < 30) {
             arr.push(0);
         }
         else {
-            arr.push(100 * (Math.sin(x) + Math.sin(y)));
+            arr.push(100 * (Math.sin(x) + Math.sin(y) + x/6));
         }
     }
     heightmap.push(arr);
 }
-//heightmap = [[100, 0, 0, 0, 0], [0, 0, 0, 0, 0],[0, 0, 0, 0, 0], [0, 0, 0, 0, 0],[0, 0, 0, 0, 0]];
+for (var y = 0; y < 100; y++) {
+    var arr = [];
+    for (var x = 0; x < 120; x++) {
+        if (Math.abs(x - 50) + Math.abs(y - 50) < 30) {
+            arr.push(-300);
+        }
+        else {
+            arr.push(-300);
+        }
+    }
+    heightmap2.push(arr);
+}
+//heightmap = [[100, 0, 0, 0, 0], [0, 0, 0, 0, 0],[0, 0, 30, 0, 0]];
+//heightmap2 = [[-100, -50, -50, -50, -50], [-50, -50, -50, -50, -50],[-50, -50, -100, -50, -50]];
+
 var planeSize = {
     width: heightmap[0].length,
     height: heightmap.length
@@ -113,21 +212,14 @@ function getHeight(x, y, map) {
 
 size = { x: 100, y: 100 };
 
-var c = new THREE.PlaneGeometry(planeSize.width * size.x, planeSize.height * size.y, planeSize.width - 1, planeSize.height - 1);
+var c2 = setBoxGeometry(planeSize, size, heightmap, heightmap2);
+var mesh = new THREE.Mesh();
 
-var pos = c.attributes.position;
-var flat_map = heightmap.slice().reverse().flat();
-
-for (var i = 0; i < pos.count; i++) {
-    var x = i * 3;
-    var y = i * 3 + 1;
-    var z = i * 3 + 2;
-    pos.array[z] = flat_map[i];
+for(var i of c2){
+    i[0].computeVertexNormals();
+    var m = new THREE.MeshPhongMaterial({ color: 0xFFFF00, transparent: true, opacity: 1, side: i[1], wireframe: false});
+    mesh.add(new THREE.Mesh(i[0],m));
 }
-c.computeVertexNormals();
-
-var m = new THREE.MeshPhongMaterial({ color: 0xFFFF00, transparent: true, opacity: 1 });
-var mesh = new THREE.Mesh(c, m);
 scene.add(mesh);
 mesh.position.add(new THREE.Vector3(size.x * planeSize.width / 2, size.y * planeSize.height / 2));
 
@@ -144,13 +236,13 @@ camera.position.y = 0;
 
 var x = camera.position.x * (planeSize.width - 1) / (planeSize.width * size.x);
 var y = camera.position.y * (planeSize.height - 1) / (planeSize.height * size.y);
-var d = 0.;
+var d = 0.1;
 var h = 5 + Math.max(getHeight(x + d, y, heightmap), getHeight(x - d, y, heightmap), getHeight(x, y + d, heightmap), getHeight(x, y - d, heightmap));
 
 camera.position.z = h;
 camera.rotation.x = 1;
 
-
+/*
 for (var y = -100; y <= 600; y += 10) {
     for (var x = -100; x <= 600; x += 10) {
         var s1 = new THREE.SphereGeometry(1, 10, 10);
@@ -164,7 +256,7 @@ for (var y = -100; y <= 600; y += 10) {
         s3.position.setZ(h);
         scene.add(s3);
     }
-}
+}*/
 
 
 
@@ -193,8 +285,8 @@ function render() {
     }
     if (keysheld["Space"]) {
         if (onground) {
-            vel.z += 5;
-            onground = false;
+        vel.z += 5;
+        onground = false;
         }
     }
     if (keysheld["ShiftLeft"]) {
@@ -212,15 +304,11 @@ function render() {
     if (camera.position.z < h) {
         camera.position.z = h;
         onground = true;
-        if (vel.z != 0) {
-            vel.z = 0;
-        }
         vel.z = 0;
     }
     else {
         onground = false;
     }
-    //vel.z = 0
     requestAnimationFrame(render);
 }
 render();
