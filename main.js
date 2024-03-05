@@ -166,7 +166,7 @@ var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 12000);
 var angleX = 0;
 var angleY = 0;
-
+var playerheight = 100;
 var heightmap = [];
 var heightmap2 = [];
 var global_scale = 1;
@@ -174,15 +174,18 @@ for (var y = 0; y < 100; y++) {
     var arr = [];
     for (var x = 0; x < 120; x++) {
         if (x>20 && x < 80 && y > 20 && y < 80) {
-            if(200-(x-50)*(x-50)-(y-50)*(y-50)>0) {
-                arr.push(global_scale * (Math.sqrt(500-(x-50)*(x-50)-(y-50)*(y-50))*200-4200));
+            if((x>45 && x<55 && y>45 && y<55)){
+                arr.push(global_scale*500);
+            }
+            else if(200-(x-50)*(x-50)-(y-50)*(y-50)>0) {
+                arr.push(global_scale * (Math.sqrt(200-(x-50)*(x-50)-(y-50)*(y-50))*100-1000));
             }
             else{
                 arr.push(-900*global_scale);
             }
         }
         else {
-            arr.push(global_scale*100 * (Math.sin(x) + Math.sin(y) + x/10));
+            arr.push(global_scale*100 * (Math.sin(x) + Math.sin(y)));
         }
     }
     heightmap.push(arr);
@@ -302,7 +305,7 @@ camera.position.y = 0;
 var x = camera.position.x * (planeSize.width - 1) / (planeSize.width * size.x);
 var y = camera.position.y * (planeSize.height - 1) / (planeSize.height * size.y);
 var d = 0.1*global_scale;
-var h = 5*global_scale + Math.max(getHeight(x + d, y, heightmap).height, getHeight(x - d, y, heightmap).height, getHeight(x, y + d, heightmap).height, getHeight(x, y - d, heightmap).height);
+var h = playerheight*global_scale + Math.max(getHeight(x + d, y, heightmap).height, getHeight(x - d, y, heightmap).height, getHeight(x, y + d, heightmap).height, getHeight(x, y - d, heightmap).height);
 camera.position.z = h;
 camera.rotation.x = 1;
 
@@ -338,30 +341,30 @@ var gravity = -0.1*global_scale;
 function render() {
     renderer.render(scene, camera);
 
-    var speed = 5*global_scale;
+    var speed = 8 *global_scale;
     var direction = camera.getWorldDirection((new THREE.Vector3()));
     direction.z = 0;
     direction.normalize();
     var delta = new THREE.Vector3(0,0,0);
     var moved = false;
     if (keysheld["ArrowUp"] || keysheld["KeyW"]) {
-        //camera.position.add(direction.multiplyScalar(speed));
-        delta = direction.multiplyScalar(1);
+        delta.add(direction);
         moved = true;
     }
     if (keysheld["ArrowDown"] || keysheld["KeyS"]) {
-        //camera.position.add(direction.multiplyScalar(-speed));
-        delta = direction.multiplyScalar(-1);
+        delta.add(direction.clone().multiplyScalar(-1));
         moved = true;
     }
     if (keysheld["ArrowRight"] || keysheld["KeyD"]) {
-        //camera.translateOnAxis(new THREE.Vector3(1.0, 0.0, 0.0), speed);
-        //moved = true;
+        delta.add(new THREE.Vector3(direction.y, -direction.x, 0));
+        moved = true;
     }
     if (keysheld["ArrowLeft"] || keysheld["KeyA"]) {
-        //camera.translateOnAxis(new THREE.Vector3(1.0, 0.0, 0.0), -speed);
-        //moved = true;
+
+        delta.add(new THREE.Vector3(-direction.y, direction.x, 0));
+        moved = true;
     }
+    
     if (keysheld["Space"]) {
         if (onground) {
         vel.z += 8*global_scale;
@@ -374,26 +377,30 @@ function render() {
         onground = false;
         //}
     }
+    
     if(moved){
-        var x = (camera.position.x+delta.x) * (planeSize.width - 1) / (planeSize.width * size.x);
-        var y = (camera.position.y+delta.y) * (planeSize.height - 1) / (planeSize.height * size.y);
-        var h = 5*global_scale + Math.max(getHeight(x + d, y, heightmap).height, getHeight(x - d, y, heightmap).height, getHeight(x, y + d, heightmap).height, getHeight(x, y - d, heightmap).height);
+        delta.normalize().multiplyScalar(1);
+        var x2 = (camera.position.x+delta.x) * (planeSize.width - 1) / (planeSize.width * size.x);
+        var y2 = (camera.position.y+delta.y) * (planeSize.height - 1) / (planeSize.height * size.y);
+        var h2 = playerheight*global_scale + Math.max(getHeight(x2 + d, y2, heightmap).height, getHeight(x2 - d, y2, heightmap).height, getHeight(x2, y2 + d, heightmap).height, getHeight(x2, y2 - d, heightmap).height);
 
-        delta.z = h-camera.position.z;
+        delta.z = h2-camera.position.z;
         if(delta.z<0){
             delta.z = 0;
         }
+        
         delta.normalize().multiplyScalar(speed);
         camera.position.add(delta);
     }
     var x = camera.position.x * (planeSize.width - 1) / (planeSize.width * size.x);
     var y = camera.position.y * (planeSize.height - 1) / (planeSize.height * size.y);
-    var h = 5*global_scale + Math.max(getHeight(x + d, y, heightmap).height, getHeight(x - d, y, heightmap).height, getHeight(x, y + d, heightmap).height, getHeight(x, y - d, heightmap).height);
+    var h = playerheight*global_scale + Math.max(getHeight(x + d, y, heightmap).height, getHeight(x - d, y, heightmap).height, getHeight(x, y + d, heightmap).height, getHeight(x, y - d, heightmap).height);
+
     var n = getHeight(x,y,heightmap).normal;
     n.x/=size.x;
     n.y/=size.y;
     n = normalize(n);
-    vel.z += gravity;
+    
     
     camera.position.add(vel);
     if (camera.position.z < h) {
@@ -411,6 +418,7 @@ function render() {
     else {
         onground = false;
     }
+    vel.z += gravity;
     
     requestAnimationFrame(render);
 }
