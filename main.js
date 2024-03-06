@@ -1,3 +1,52 @@
+class Snowball {
+    constructor(radius, x, y, z, dx, dy, dz, gravity, scene) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.dx = dx;
+        this.dy = dy;
+        this.dz = dz;
+        this.radius = radius;
+        this.gravity = gravity;
+        this.geometry = new THREE.SphereGeometry(radius, 24, 24);
+        this.material = new THREE.MeshPhongMaterial({ color: 0xFFFAFA});
+        this.mesh = new THREE.Mesh(this.geometry, this.material);
+        this.mesh.position.set(this.x, this.y, this.z);
+        scene.add(this.mesh);
+
+    }
+    deleteSelf(){
+        scene.remove(this.mesh);
+        this.geometry.dispose();
+        this.material.dispose();
+    }
+    update(planeSize, size, map){
+        this.dz += this.gravity;
+        this.x += this.dx;
+        this.y += this.dy;
+        this.z += this.dz;
+        this.mesh.position.set(this.x, this.y, this.z);
+        if(this.intersectsTerrain(planeSize, size, map)){
+            this.deleteSelf();
+            return false;
+        }
+        return true;
+    }
+    intersectsTerrain(planeSize, size, map){
+        var x = this.x * (planeSize.width - 1) / (planeSize.width * size.x);
+        var y = this.y * (planeSize.height - 1) / (planeSize.height * size.y);
+        var height = getHeight(x,y,map).height;
+        if(this.z-this.radius < height){
+            return true;
+        }
+        return false;
+    }
+}
+
+
+
+
+
 function setBoxGeometry(planeSize, size, map1, map2) {
     top.c = new THREE.PlaneGeometry(planeSize.width * size.x, planeSize.height * size.y, planeSize.width - 1, planeSize.height - 1);
     var pos = c.attributes.position;
@@ -160,6 +209,7 @@ window.addEventListener('wheel', function (e) {
 
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
+
 document.body.appendChild(renderer.domElement);
 
 var scene = new THREE.Scene();
@@ -309,6 +359,10 @@ var h = playerheight*global_scale + Math.max(getHeight(x + d, y, heightmap).heig
 camera.position.z = h;
 camera.rotation.x = 1;
 
+var snowballs = [];
+
+
+
 /*
 for (var y = 0; y <= 500; y += 50) {
     for (var x = 0; x <= 500; x += 50) {
@@ -338,10 +392,12 @@ for (var y = 0; y <= 500; y += 50) {
 var vel = new THREE.Vector3();
 var onground = false;
 var gravity = -0.1*global_scale;
+var cooldown = 0;
 function render() {
     renderer.render(scene, camera);
 
     var speed = 8 *global_scale;
+    var actualdirection = camera.getWorldDirection((new THREE.Vector3()));
     var direction = camera.getWorldDirection((new THREE.Vector3()));
     direction.z = 0;
     direction.normalize();
@@ -377,7 +433,22 @@ function render() {
         onground = false;
         //}
     }
-    
+    if (keysheld["KeyZ"]) {
+        if(cooldown == 0){
+            cooldown = 0;
+            var power = 20;
+            snowballs.push(new Snowball(Math.floor(Math.random()*10)+10, camera.position.x, camera.position.y, camera.position.z, actualdirection.x*power, actualdirection.y*power, actualdirection.z*power, gravity, scene));
+        }
+    }
+    cooldown-=1;
+    if(cooldown < 0){
+        cooldown = 0;
+    }
+    for(var s = snowballs.length - 1; s >=0; s--){
+        if(!snowballs[s].update(planeSize, size, heightmap)){
+            snowballs.splice(s,1);
+        }
+    }
     if(moved){
         delta.normalize().multiplyScalar(1);
         var x2 = (camera.position.x+delta.x) * (planeSize.width - 1) / (planeSize.width * size.x);
